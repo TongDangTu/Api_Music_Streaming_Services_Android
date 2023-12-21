@@ -19,20 +19,34 @@
             else {
                 $id = "10001";
             }
+            
 
             $data_request = json_decode(file_get_contents("php://input"));
-            $stmt = mysqli_prepare($conn, "INSERT INTO song_playlist VALUES(?, ?, ?)");
-            mysqli_stmt_bind_param($stmt, "sss", $id, $data_request->id_song, $data_request->id_playlist);
+
+            $stmt = mysqli_prepare($conn, "SELECT * FROM song_playlist WHERE id_song = ? AND id_playlist = ?");
+            mysqli_stmt_bind_param($stmt, "ss", $data_request->id_song, $data_request->id_playlist);
+
             if (mysqli_stmt_execute($stmt)) {
-                $data_response['status'] = true;
-                $data_response['data'][] = array("id" => $id,
-                                                 "id_song" => $data_request->id_song,
-                                                 "id_playlist" => $data_request->id_playlist);
-                $data_response['message'] = "Thêm mới bài hát vào playlist thành công";
-            }
-            else {
-                $data_response['status'] = false;
-                $data_response['message'] = "Thêm mới bài hát vào playlist thất bại";
+                $result = mysqli_stmt_get_result($stmt);
+                if (mysqli_num_rows($result) > 0) {
+                    $data_response['status'] = false;
+                    $data_response['message'] = "Bài hát đã tồn tại trong playlist";
+                }
+                else {
+                    $stmt = mysqli_prepare($conn, "INSERT INTO song_playlist VALUES(?, ?, ?)");
+                    mysqli_stmt_bind_param($stmt, "sss", $id, $data_request->id_song, $data_request->id_playlist);
+                    if (mysqli_stmt_execute($stmt)) {
+                        $data_response['status'] = true;
+                        $data_response['data'][] = array("id" => $id,
+                                                        "id_song" => $data_request->id_song,
+                                                        "id_playlist" => $data_request->id_playlist);
+                        $data_response['message'] = "Thêm mới bài hát vào playlist thành công";
+                    }
+                    else {
+                        $data_response['status'] = false;
+                        $data_response['message'] = "Thêm mới bài hát vào playlist thất bại";
+                    }
+                }
             }
         }
         catch (Exception $ex) {

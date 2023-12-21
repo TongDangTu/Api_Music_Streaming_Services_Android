@@ -9,11 +9,12 @@
         $data_response = array('status' => false, 'data' => [], 'message' => "none");
         try {
             $data_request = json_decode(file_get_contents("php://input"));
-            $stmt = mysqli_prepare($conn, "DELETE FROM song_playlist WHERE id = ?");
-            mysqli_stmt_bind_param($stmt, "s", $data_request->id);
+            $stmt = mysqli_prepare($conn, "DELETE FROM song_playlist WHERE id_song = ? AND id_playlist = ?");
+            mysqli_stmt_bind_param($stmt, "ss", $data_request->id_song, $data_request->id_playlist);
             if (mysqli_stmt_execute($stmt)) {
                 $data_response['status'] = true;
-                $data_response['data'][] = array("id" => $data_request->id);
+                $data_response['data'][] = array("id_song" => $data_request->id_song,
+                                                 "id_playlist" => $data_request->id_playlist);
                 $data_response['message'] = "Xóa bài hát khỏi playlist thành công";
             }
             else {

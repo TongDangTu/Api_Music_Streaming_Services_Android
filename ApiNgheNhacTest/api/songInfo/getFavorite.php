@@ -53,7 +53,7 @@
             }
             else {
                 $data_response['status'] = false;
-                $data_response['message'] = "Lấy danh sách yêu thích thất bại.";
+                $data_response['message'] = "Danh sách yêu thích trống.";
             }
         }
         catch (Exception $ex) {

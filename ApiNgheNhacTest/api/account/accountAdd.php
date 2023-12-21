@@ -29,6 +29,22 @@
                     $data_response['status'] = true;
                     $data_response['data'][] = array("username" => $data_request->username);
                     $data_response['message'] = "Đăng ký tài khoản mới thành công";
+
+                    $query = "SELECT id FROM playlist ORDER BY id DESC LIMIT 1";
+                    $result = mysqli_query($conn, $query);
+                    if (mysqli_num_rows($result) > 0) {
+                        while ($row = mysqli_fetch_assoc($result)) {
+                            $id = $row['id'];
+                            $id = $id + 1;
+                        }
+                    }
+                    else {
+                        $id = "10001";
+                    }
+
+                    $stmt = mysqli_prepare($conn, "INSERT INTO playlist VALUES(?, \"Favorite\", ?)");
+                    mysqli_stmt_bind_param($stmt, "ss", $id, $data_request->username);
+                    mysqli_stmt_execute($stmt);
                 }
                 else {
                     $data_response['status'] = false;
