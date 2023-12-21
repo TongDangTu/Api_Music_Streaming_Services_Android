@@ -1,42 +1,49 @@
 <?php include "../../config/connection.php"; ?>
-<?php include "../../model/playlist.php"; ?>
 <?php
     header("Access-Control-Allow-Origin:*");
     header("Content-Type: application/json");
+    header("Access-Control-Allow-Methods: POST");
+    header("Access-Control-Allow-Headers: Access-Control-Allow-Headers, Content-Type, Access-Control-Allow-Methods, Authorization, X-Requested-With");
 
     if (empty($conn) == false) {
         $data_response = array('status' => false, 'data' => [], 'message' => "none");
         try {
-            if (empty($_GET['username']) == false) {
-                $str_id = $_GET['username'];
-                $stmt = mysqli_prepare($conn, "SELECT 
-                p.id AS playlist_id,
-                p.name AS playlist_name,
-                MAX(s.linkPicture) AS playlist_picture
-                    FROM playlist p
-                        LEFT JOIN song_playlist sp ON p.id = sp.id_playlist
-                            LEFT JOIN song s ON s.id = sp.id_song
-                        WHERE p.username = ? 
-                    GROUP BY p.id, p.name;");
-                mysqli_stmt_bind_param($stmt, "s", $str_id);
-                mysqli_stmt_execute($stmt);
+            $data_request = json_decode(file_get_contents("php://input"));
+            $query = "SELECT id FROM playlist WHERE username = ? LIMIT 1";
+            $stmt = mysqli_prepare($conn, $query);
+            mysqli_stmt_bind_param($stmt, "s", $data_request->username);
+            if (mysqli_stmt_execute($stmt)) {
                 $result = mysqli_stmt_get_result($stmt);
-                if (mysqli_num_rows($result) > 0) {
-                    while ($row = mysqli_fetch_assoc($result)) {
-                        if($row['playlist_picture'] == null || $row['playlist_picture'] == ""){
-                            $row['playlist_picture'] = "https://nhomhungtu.000webhostapp.com/img/img_cd.png";
-                        }
-                        $data_response['status'] = true;
-                        $data_response['data'][] = array("id" => $row['playlist_id'],
-                                                        "name" => $row['playlist_name'],
-                                                        "linkPicture" => $row['playlist_picture']);
-                        $data_response['message'] = "Lấy danh sách phát thành công";
-                    }
+                while ($row = mysqli_fetch_assoc($result)) {
+                    $id_playlist = $row['id'];
                 }
-                else {
-                    $data_response['status'] = false;
-                    $data_response['message'] = "Không có danh sách phát cần lấy";
+            }
+
+            $query = "SELECT id FROM song_playlist ORDER BY id DESC LIMIT 1";
+            $result = mysqli_query($conn, $query);
+            if (mysqli_num_rows($result) > 0) {
+                while ($row = mysqli_fetch_assoc($result)) {
+                    $id = $row['id'];
+                    $id = $id + 1;
                 }
+            }
+            else {
+                $id = "10001";
+            }
+
+            
+            $stmt = mysqli_prepare($conn, "INSERT INTO song_playlist VALUES(?, ?, ?)");
+            mysqli_stmt_bind_param($stmt, "sss", $id, $data_request->id_song, $id_playlist);
+            if (mysqli_stmt_execute($stmt)) {
+                $data_response['status'] = true;
+                $data_response['data'][] = array("id" => $id,
+                                                 "id_song" => $data_request->id_song,
+                                                 "id_playlist" => $id_playlist);
+                $data_response['message'] = "Thêm mới bài hát vào playlist favorite thành công";
+            }
+            else {
+                $data_response['status'] = false;
+                $data_response['message'] = "Thêm mới bài hát vào playlist favorite thất bại";
             }
         }
         catch (Exception $ex) {
