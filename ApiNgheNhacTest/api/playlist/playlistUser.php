@@ -9,6 +9,17 @@
         try {
             if (empty($_GET['username']) == false) {
                 $str_id = $_GET['username'];
+                
+                $query = "SELECT id FROM playlist WHERE username = ? LIMIT 1";
+                $stmt = mysqli_prepare($conn, $query);
+                mysqli_stmt_bind_param($stmt, "s", $str_id);
+                if (mysqli_stmt_execute($stmt)) {
+                    $result = mysqli_stmt_get_result($stmt);
+                    while ($row = mysqli_fetch_assoc($result)) {
+                        $id_playlist = $row['id'];
+                    }
+                }
+                
                 $stmt = mysqli_prepare($conn, "SELECT 
                 p.id AS playlist_id,
                 p.name AS playlist_name,
@@ -16,9 +27,9 @@
                     FROM playlist p
                         LEFT JOIN song_playlist sp ON p.id = sp.id_playlist
                             LEFT JOIN song s ON s.id = sp.id_song
-                        WHERE p.username = ? 
+                        WHERE p.username = ? AND p.id != ?
                     GROUP BY p.id, p.name;");
-                mysqli_stmt_bind_param($stmt, "s", $str_id);
+                mysqli_stmt_bind_param($stmt, "ss", $str_id, $id_playlist);
                 mysqli_stmt_execute($stmt);
                 $result = mysqli_stmt_get_result($stmt);
                 if (mysqli_num_rows($result) > 0) {
